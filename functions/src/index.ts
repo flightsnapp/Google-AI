@@ -1,32 +1,25 @@
-/**
- * Import function triggers from their respective submodules:
- *
- * import {onCall} from "firebase-functions/v2/https";
- * import {onDocumentWritten} from "firebase-functions/v2/firestore";
- *
- * See a full list of supported triggers at https://firebase.google.com/docs/functions
- */
+// functions/src/index.ts
+import { onCall } from "firebase-functions/v1/https";
+import { HttpsError } from "firebase-functions/v1/https";
+import * as functions from "firebase-functions/v1";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-import {setGlobalOptions} from "firebase-functions";
-import {onRequest} from "firebase-functions/https";
-import * as logger from "firebase-functions/logger";
+const genAI = new GoogleGenerativeAI(functions.config().gemini.api_key);
 
-// Start writing functions
-// https://firebase.google.com/docs/functions/typescript
+export const generateCuratorResponse = onCall(async (request: any) => {
+  const prompt = request.data.prompt;
+  if (!prompt) {
+    throw new HttpsError("invalid-argument", "Prompt is required.");
+  }
 
-// For cost control, you can set the maximum number of containers that can be
-// running at the same time. This helps mitigate the impact of unexpected
-// traffic spikes by instead downgrading performance. This limit is a
-// per-function limit. You can override the limit for each function using the
-// `maxInstances` option in the function's options, e.g.
-// `onRequest({ maxInstances: 5 }, (req, res) => { ... })`.
-// NOTE: setGlobalOptions does not apply to functions using the v1 API. V1
-// functions should each use functions.runWith({ maxInstances: 10 }) instead.
-// In the v1 API, each function can only serve one request per container, so
-// this will be the maximum concurrent request count.
-setGlobalOptions({ maxInstances: 10 });
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const result = await model.generateContent(prompt);
+    const text = result.response.text();
 
-// export const helloWorld = onRequest((request, response) => {
-//   logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
+    return { text };
+  } catch (error: any) {
+    console.error("Gemini Error:", error);
+    throw new HttpsError("internal", "Failed to generate response.");
+  }
+});
