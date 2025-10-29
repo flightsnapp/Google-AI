@@ -1,0 +1,7 @@
+{
+  "name": "FlightSnapp Curator",
+  "description": "A personality-driven vacation booking app that uses a psychological quiz to generate curated travel packages. It includes persona assignments, group booking rewards, and shareable content.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
