@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "serve": "tsx server.ts",
-    "start": "npm run serve"
+    "start": "node --loader=tsx/esm server.ts"
   },
   "dependencies": {
     "react": "^19.2.0",

@@ -9,7 +9,12 @@ const __dirname = dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-// Serve static files from dist
+// Health check endpoint (Cloud Run pings this)
+app.get('/healthz', (req, res) => {
+  res.status(200).send('OK - FlightSnapp Backend Ready');
+});
+
+// Serve static files
 app.use(express.static(__dirname + '/dist'));
 
 // SPA fallback
@@ -17,6 +22,7 @@ app.get('*', (req, res) => {
   res.sendFile(__dirname + '/dist/index.html');
 });
 
-app.listen(PORT, () => {
+// Listen immediately
+app.listen(PORT, '0.0.0.0', () => {  // Bind to all interfaces
   console.log(`FlightSnapp LIVE on port ${PORT}`);
 });
