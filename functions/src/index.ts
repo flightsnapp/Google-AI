@@ -6,8 +6,6 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(functions.config().gemini.api_key);
 
-// onCall v1: ONLY ONE ARG (handler)
-// CORS is enabled by default for callable functions
 export const generateCuratorResponse = onCall(async (request: any) => {
   const prompt = request.data.prompt;
   if (!prompt) {
@@ -15,7 +13,10 @@ export const generateCuratorResponse = onCall(async (request: any) => {
   }
 
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.5-flash",
+    });
+
     const result = await model.generateContent(prompt);
     const text = result.response.text();
 

@@ -18,17 +18,88 @@ const functions = getFunctions(app, 'us-central1');
 
 const buildPrompt = (inputs: UserInputs): string => {
   return `
-You are **The Curator**, the xAI-powered engine of **FlightSnapp** — a personality-driven vacation booking app using Big Five psychology, spontaneous curation, and gamified group rewards.
+You are **The Curator**, the xAI-powered engine of **FlightSnapp**.
 
-Your task: **Output ONLY a complete, structured JSON** representing:
-1. Full Quiz Flow (10 core + follow-ups + modifiers)
-2. Persona Assignment (1 of 25 from the official catalog)
-3. 3–5 Curated Vacation Packages
-4. Snapp Squad Group Tiers
-5. Shareables (viral hooks)
-6. Booking Session Stubs
+**OUTPUT ONLY VALID JSON — NO MARKDOWN, NO \`\`\`json, NO EXTRA TEXT**
 
-**NEVER output markdown, prose, or explanations — JSON ONLY.**
+**REQUIRED JSON STRUCTURE — YOU MUST INCLUDE EVERY FIELD:**
+{
+  "persona_assignment": {
+    "name": "string",
+    "vibe": "string",
+    "tags": ["string"],
+    "weights": {
+      "O": number,
+      "C": number,
+      "E": number,
+      "A": number,
+      "N": number
+    },
+    "reasoning": "string",
+    "dot_score": 0,
+    "description": "string",
+    "image_url": "https://picsum.photos/seed/persona/800/600"
+  },
+  "curated_packages": [
+    {
+      "name": "string",
+      "total_price": number,
+      "price_per_traveler": number,
+      "flight": {
+        "airline": "string",
+        "flight_number": "string",
+        "departure_airport": "${inputs.departure_city}",
+        "arrival_airport": "string",
+        "departure_time": "2025-11-18T08:00:00",
+        "arrival_time": "2025-11-18T14:00:00",
+        "duration": "6h",
+        "price": number
+      },
+      "lodging": {
+        "name": "string",
+        "type": "Hotel",
+        "rating": 4.5,
+        "nights": 4,
+        "price_per_night": 150,
+        "total_price": 600
+      },
+      "activity": "string",
+      "fit_notes": "string",
+      "booking_link": "https://expedia.com/partner/flightsnapp?ref=...",
+      "availability": "High",
+      "pricing_basis": "estimates",
+      "image_url": "https://picsum.photos/seed/pkg1/800/600"
+    }
+  ],
+  "snapp_squad_tiers": [
+    {
+      "tier": 1,
+      "min_members": 3,
+      "rewards": ["3% off"],
+      "cta": "Invite 1 more!"
+    }
+  ],
+  "shareables_per_package": [
+    {
+      "short_blurb": "string",
+      "share_cta_x": "string",
+      "copy_blocks": { "title": "string", "subtitle": "string" }
+    }
+  ],
+  "booking_session_stubs": {
+    "flight_query": "string",
+    "hotel_query": "string",
+    "activity_query": "string",
+    "affiliate_hint": "expedia"
+  }
+}
+
+**CRITICAL RULES — YOU MUST OBEY:**
+1. **ALWAYS** return **3–5 packages** in \`curated_packages\`.
+2. Use **exact persona name** from \`assigned_persona_name\`.
+3. Use **exact weights** from catalog below.
+4. **NEVER** omit any field.
+5. **START WITH { AND END WITH }**
 
 **25 PERSONAS CATALOG**
 1. The Wild Trailblazer (O: 0.286, C: -0.214, E: 0.286, A: -0.143, N: -0.071)
@@ -62,18 +133,19 @@ Your task: **Output ONLY a complete, structured JSON** representing:
 ${JSON.stringify(inputs, null, 2)}
 \`\`\`
 
-Now generate the JSON.
+**OUTPUT JSON NOW — START WITH {**
 `;
 };
 
 export const fetchCuratorResponse = async (inputs: UserInputs): Promise<CuratorResponse> => {
   const prompt = buildPrompt(inputs);
   const generate = httpsCallable(functions, 'generateCuratorResponse');
-  
-  // ← THIS IS THE FIX
   const result = await generate({ data: { prompt } });
-  
   const text = (result.data as any).text;
   if (!text) throw new Error("Empty response from Gemini function.");
-  return JSON.parse(text) as CuratorResponse;
+
+  // Clean any code fences
+  const cleaned = text.replace(/^```json\s*|\s*```$/g, '').trim();
+
+  return JSON.parse(cleaned) as CuratorResponse;
 };
