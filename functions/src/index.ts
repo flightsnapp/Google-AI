@@ -6,6 +6,8 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(functions.config().gemini.api_key);
 
+// onCall v1: ONLY ONE ARG (handler)
+// CORS is enabled by default for callable functions
 export const generateCuratorResponse = onCall(async (request: any) => {
   const prompt = request.data.prompt;
   if (!prompt) {

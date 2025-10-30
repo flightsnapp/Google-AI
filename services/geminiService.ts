@@ -14,7 +14,7 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const functions = getFunctions(app);
+const functions = getFunctions(app, 'us-central1');
 
 const buildPrompt = (inputs: UserInputs): string => {
   return `
@@ -69,7 +69,10 @@ Now generate the JSON.
 export const fetchCuratorResponse = async (inputs: UserInputs): Promise<CuratorResponse> => {
   const prompt = buildPrompt(inputs);
   const generate = httpsCallable(functions, 'generateCuratorResponse');
-  const result = await generate({ prompt });
+  
+  // ← THIS IS THE FIX
+  const result = await generate({ data: { prompt } });
+  
   const text = (result.data as any).text;
   if (!text) throw new Error("Empty response from Gemini function.");
   return JSON.parse(text) as CuratorResponse;
